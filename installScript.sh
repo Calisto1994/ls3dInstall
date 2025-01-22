@@ -4,7 +4,7 @@ sudo echo Administrative privileges granted.
 
 # Prepare necessary tools for downloading (wget) and running the application (wine) as well as for proper GPU acceleration (winetricks/dxvk)
 echo "Preparing prerequisites..."
-sudo apt install wget wine winetricks
+sudo apt install wget wine winetricks zenity
 winetricks dxvk
 
 # Download & install WBS LearnSpace 3D
