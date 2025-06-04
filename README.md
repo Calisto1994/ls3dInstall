@@ -5,7 +5,7 @@ To install _WBS LearnSpace 3D_, you just have to add execution permission to the
 chmod +x installScript.sh
 ./installScript.sh
 
-# Remove _WBS Learnspace 3D_
+#Remove _WBS Learnspace 3D_
 
 To uninstall the Software just execute the following commands:
 
