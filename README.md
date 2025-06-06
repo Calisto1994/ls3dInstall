@@ -13,7 +13,7 @@ chmod +x installScript.sh
 
 The script will:
 - Install Wine if it is not already present.
-- Set up a Wine environment.
+- Set up a Wine environment with [DXVK](https://github.com/doitsujin/dxvk) for better compatibility with 3D graphics accelerators.
 - Download and run the official Windows installer for WBS LearnSpace 3D via [Wget](https://de.wikipedia.org/wiki/Wget).
 - Create shortcuts and perform any additional configuration needed to make the application usable on Linux, e.g. register a URI scheme handler so you can launch WBS LearnSpace 3D to a specific server from your browser.
 
