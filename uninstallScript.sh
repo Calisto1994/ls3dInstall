@@ -1,107 +1,90 @@
-
-
 #!/bin/bash
 
-# Funktion zur Überprüfung, ob ein Befehl existiert
+# Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Aktuellen Benutzer und dessen Home-Verzeichnis ermitteln
-# $HOME sollte für den Benutzer, der das Skript ausführt, korrekt sein.
-# $(whoami) gibt den aktuellen Benutzernamen zurück.
+# Determine current user and their home directory
+# $HOME should be correct for the user running the script.
+# $(whoami) returns the current username.
 CURRENT_USER=$(whoami)
 USER_HOME="$HOME"
 
-# Pfade zu den relevanten Dateien und Verzeichnissen
+# Paths to relevant files and directories
 LS3D_APP_DATA_ROOT_PATH="$USER_HOME/.wine/drive_c/users/$CURRENT_USER/AppData/Local/TriCAT"
-LS3D_APP_DATA_PATH="$LS3D_APP_DATA_ROOT_PATH/WBS" # WBS ist der spezifische Unterordner
+LS3D_APP_DATA_PATH="$LS3D_APP_DATA_ROOT_PATH/WBS" # WBS is the specific subfolder
 LAUNCH_SCRIPT_PATH="$LS3D_APP_DATA_PATH/launch-ls3d.sh"
-UNINSTALL_EXE_PATH="$LS3D_APP_DATA_PATH/Uninstall.exe" # Annahme, dass die Uninstall.exe hier liegt
+UNINSTALL_EXE_PATH="$LS3D_APP_DATA_PATH/Uninstall.exe" # Assumption that Uninstall.exe is located here
 DESKTOP_FILE_PATH="/usr/share/applications/ls3d-handler.desktop"
 
 echo "WBS LearnSpace 3D Uninstaller"
 echo "--------------------------------"
 
-# Administrative Berechtigungen frühzeitig anfordern
-sudo echo "Administrative Berechtigungen für einige Operationen erforderlich."
+# Request administrative privileges early
+sudo echo "Administrative privileges required for some operations."
 
-# 1. Den anwendungseigenen Uninstaller ausführen (falls vorhanden)
+# 1. Execute the application's own uninstaller (if present)
 if [ -f "$UNINSTALL_EXE_PATH" ]; then
-    echo "Versuche, den Uninstaller der Anwendung auszuführen: $UNINSTALL_EXE_PATH"
-    echo "Bitte folge den Anweisungen des WBS LearnSpace 3D Uninstallers."
+    echo "Attempting to run the application's uninstaller: $UNINSTALL_EXE_PATH"
+    echo "Please follow the instructions of the WBS LearnSpace 3D Uninstaller."
     wine "$UNINSTALL_EXE_PATH"
-    echo "Anwendungs-Uninstaller beendet."
-
-    # Kurze Pause, damit der Uninstaller der Anwendung Zeit hat, seine Arbeit zu erledigen,
-    # bevor wir versuchen, das Verzeichnis zu löschen (optional).
+    echo "Application uninstaller finished."
+    
     sleep 2
-
-    # Optional: Versuchen, das WBS-Verzeichnis zu entfernen, falls es nach der Deinstallation leer ist
-    # oder wenn der Uninstaller es nicht vollständig entfernt.
-    # Vorsicht: Nur löschen, wenn es sicher ist, dass nichts anderes im TriCAT-Ordner benötigt wird,
-    # oder spezifischer den WBS-Ordner.
-    if [ -d "$LS3D_APP_DATA_PATH" ]; then
-        echo "Überprüfe das Anwendungsverzeichnis: $LS3D_APP_DATA_PATH"
-        # Wenn der Ordner leer ist, kann er entfernt werden.
-        # Für eine aggressivere Reinigung könnte man direkt `rm -rf "$LS3D_APP_DATA_PATH"` in Erwägung ziehen,
-        # aber das ist riskant, wenn der Uninstaller nicht alle Dateien entfernt oder wenn der Benutzer dort manuell etwas gespeichert hat.
-        # Vorerst belassen wir es dabei, dass der Haupt-Uninstaller der Anwendung dies handhaben sollte.
-    fi
 else
-    echo "WARNUNG: Anwendungs-Uninstaller nicht gefunden unter $UNINSTALL_EXE_PATH."
-    echo "Dies könnte bedeuten, dass die Anwendung bereits teilweise deinstalliert wurde oder nicht korrekt installiert war."
-    echo "Fahre mit dem Entfernen der benutzerdefinierten Skripte und Desktop-Dateien fort."
+    echo "WARNING: Application uninstaller not found at $UNINSTALL_EXE_PATH."
+    echo "This might mean the application was already partially uninstalled or not correctly installed."
+    echo "Continuing with removal of custom scripts and desktop files."
 fi
 
-# 2. Benutzerdefiniertes Startskript entfernen
-# Die Installationsskripte haben sudo verwendet, um diese Datei zu verschieben,
-# daher ist sudo hier sicherer, falls die Datei Root gehört.
+# 2. Remove custom launch script
+# The installation script used sudo to move this file,
+# so sudo is safer here in case the file is owned by root.
 if [ -f "$LAUNCH_SCRIPT_PATH" ]; then
-    echo "Entferne benutzerdefiniertes Startskript: $LAUNCH_SCRIPT_PATH"
+    echo "Removing custom launch script: $LAUNCH_SCRIPT_PATH"
     sudo rm -f "$LAUNCH_SCRIPT_PATH"
 else
-    echo "Benutzerdefiniertes Startskript nicht gefunden (bereits entfernt oder nicht installiert): $LAUNCH_SCRIPT_PATH"
+    echo "Custom launch script not found (already removed or not installed): $LAUNCH_SCRIPT_PATH"
 fi
 
-# 3. Desktop-Datei entfernen und Datenbank aktualisieren
+# 3. Remove desktop file and update database
 if [ -f "$DESKTOP_FILE_PATH" ]; then
-    echo "Entferne Desktop-Datei: $DESKTOP_FILE_PATH"
+    echo "Removing desktop file: $DESKTOP_FILE_PATH"
     sudo rm -f "$DESKTOP_FILE_PATH"
-    echo "Aktualisiere Desktop-Datenbank..."
+    echo "Updating desktop database..."
     sudo update-desktop-database
 else
-    echo "Desktop-Datei nicht gefunden (bereits entfernt oder nicht installiert): $DESKTOP_FILE_PATH"
+    echo "Desktop file not found (already removed or not installed): $DESKTOP_FILE_PATH"
 fi
 
-# 4. Anbieten, die installierten Pakete zu entfernen
-# Zenity war Teil der Installation in beiden Skripten.
+# 4. Offer to remove installed packages
 PACKAGES_TO_REMOVE="wget wine winetricks zenity"
 echo ""
-read -r -p "Möchtest du versuchen, die folgenden Pakete zu entfernen: $PACKAGES_TO_REMOVE? (Diese könnten von anderen Anwendungen verwendet werden) [j/N]: " REMOVE_PACKAGES_CHOICE
-REMOVE_PACKAGES_CHOICE=${REMOVE_PACKAGES_CHOICE:-N} # Standard ist Nein
+read -r -p "Do you want to try to remove the following packages: $PACKAGES_TO_REMOVE? (These might be used by other applications) [y/N]: " REMOVE_PACKAGES_CHOICE
+REMOVE_PACKAGES_CHOICE=${REMOVE_PACKAGES_CHOICE:-N} # Default is No
 
-if [[ "$REMOVE_PACKAGES_CHOICE" =~ ^[JjYy]$ ]]; then # Akzeptiert j, J, y, Y
+if [[ "$REMOVE_PACKAGES_CHOICE" =~ ^[JjYy]$ ]]; then # Accepts j, J, y, Y
     if command_exists apt-get; then
-        echo "Debian-basiertes System erkannt. Verwende apt-get."
-        echo "Versuche, Pakete zu entfernen: $PACKAGES_TO_REMOVE"
+        echo "Debian-based system detected. Using apt-get."
+        echo "Attempting to remove packages: $PACKAGES_TO_REMOVE"
         sudo apt-get remove $PACKAGES_TO_REMOVE
-        echo "Du könntest 'sudo apt autoremove' ausführen, um weitere nicht mehr benötigte Abhängigkeiten zu entfernen."
+        echo "You might want to run 'sudo apt autoremove' to remove further no longer needed dependencies."
     elif command_exists pacman; then
-        echo "Arch-basiertes System erkannt. Verwende pacman."
-        echo "Versuche, Pakete zu entfernen: $PACKAGES_TO_REMOVE"
-        # -Rns entfernt das Paket, seine nicht benötigten Abhängigkeiten und Konfigurationsdateien.
+        echo "Arch-based system detected. Using pacman."
+        echo "Attempting to remove packages: $PACKAGES_TO_REMOVE"
+        # -Rns removes the package, its unneeded dependencies, and configuration files.
         sudo pacman -Rns $PACKAGES_TO_REMOVE
     else
-        echo "Konnte keinen unterstützten Paketmanager (apt-get/pacman) finden. Überspringe Paketentfernung."
-        echo "Bitte entferne die Pakete ($PACKAGES_TO_REMOVE) manuell, falls gewünscht."
+        echo "Could not find a supported package manager (apt-get/pacman). Skipping package removal."
+        echo "Please remove the packages ($PACKAGES_TO_REMOVE) manually if desired."
     fi
 else
-    echo "Überspringe das Entfernen der Pakete: $PACKAGES_TO_REMOVE."
+    echo "Skipping removal of packages: $PACKAGES_TO_REMOVE."
 fi
 
 echo ""
-echo "Deinstallationsprozess für WBS LearnSpace 3D ist abgeschlossen."
-echo "Hinweis: Dieses Skript entfernt nicht das ~/.wine Verzeichnis (dein Wine-Präfix) oder darin installiertes DXVK."
-echo "Falls du diese entfernen möchtest, musst du dies manuell tun."
-echo "Fertig."
+echo "Uninstallation process for WBS LearnSpace 3D is complete."
+echo "Note: This script does not remove the ~/.wine directory (your Wine prefix) or DXVK installed within it."
+echo "If you wish to remove these, you will need to do so manually."
+echo "Done."
