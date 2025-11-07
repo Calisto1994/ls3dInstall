@@ -110,7 +110,6 @@ cat <<EOF > "$LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
 #!/bin/bash
 URI="\$1"
 # Command prefix determined by the outer script (e.g., mangohud prime-run)
-CMD_PREFIX="${mangohud_cmd_prefix}${prime_run_cmd_prefix}"
 
 if [[ "\$URI" == *"?backend="* ]]; then
     # Extract the value of the 'backend' query parameter
@@ -131,7 +130,7 @@ fi
 
 zenity --info --text="Starting LearnSpace3D with Backend: \${backendServer}." --title="LearnSpace3D"
 # Execute: [MANGOHUD_CONFIG=... mangohud] [prime-run] wine learnspace3d.exe -backend "\$backendServer"
-\${CMD_PREFIX}wine learnspace3d.exe -backend "\$backendServer"
+${mangohud_cmd_prefix}${prime_run_cmd_prefix}wine learnspace3d.exe -backend "\$backendServer"
 EOF
 chmod +x "$LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
 echo "Launch script created at $LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
