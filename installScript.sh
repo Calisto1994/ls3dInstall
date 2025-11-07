@@ -20,7 +20,7 @@ else
     exit 1
 fi
 
-# --- prime-run detection and prompt ---
+# --- 1. prime-run detection and prompt ---
 prime_run_cmd_prefix=""
 if command_exists "prime-run"; then
     read -r -p "prime-run detected. Do you want to use it for LearnSpace3D? (Render Offload for NVIDIA Optimus) [y/N] " prime_run_choice_input
@@ -33,6 +33,25 @@ if command_exists "prime-run"; then
     fi
 else
     echo "prime-run not detected. Skipping prime-run configuration."
+fi
+
+# --- 2. MangoHud FPS Limit detection and prompt ---
+mangohud_cmd_prefix=""
+if command_exists "mangohud"; then
+    echo "MangoHud detected."
+    read -r -p "Do you want to limit FPS to 60 for LearnSpace3D? (Overlay will be hidden) [y/N] " fps_limit_choice_input
+    fps_limit_choice_input=${fps_limit_choice_input:-N} # Default is No
+    if [[ "$fps_limit_choice_input" =~ ^[JjYy]$ ]]; then # Accepts j, J, y, Y
+        # Set the prefix to include MANGOHUD_CONFIG and the mangohud command itself
+        # The environment variable needs to be exported in the inner script for wine/the game to see it.
+        # We only pass the command prefix here, the ENV export happens in launch-ls3d.sh
+        mangohud_cmd_prefix="MANGOHUD_CONFIG=\"fps_limit=60,no_display\" mangohud "
+        echo "FPS will be limited to 60 and the overlay will be hidden."
+    else
+        echo "FPS will not be limited by MangoHud."
+    fi
+else
+    echo "MangoHud not detected. Skipping FPS limit configuration."
 fi
 
 # --- Package manager detection and dependency installation ---
@@ -85,13 +104,13 @@ LS3D_LAUNCH_SCRIPT_DIR_LINUX="$HOME/.wine/drive_c/users/$USER/AppData/Local/TriC
 # Ensure the target directory for launch-ls3d.sh exists
 mkdir -p "$LS3D_LAUNCH_SCRIPT_DIR_LINUX"
 
-# The content of launch-ls3d.sh. ${prime_run_cmd_prefix} will be expanded by the outer script.
-# Variables like \$1 and \${backendServer} are for the inner script and need to be escaped.
+# The content of launch-ls3d.sh. ${prime_run_cmd_prefix} and ${mangohud_cmd_prefix} will be expanded by the outer script.
+# The `mangohud_cmd_prefix` contains the necessary variables and the `mangohud` command itself.
 cat <<EOF > "$LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
 #!/bin/bash
 URI="\$1"
-# Default Prime-Run prefix (will be replaced by outer script if defined there)
-prime_prefix_placeholder="${prime_run_cmd_prefix}"
+# Command prefix determined by the outer script (e.g., mangohud prime-run)
+CMD_PREFIX="${mangohud_cmd_prefix}${prime_run_cmd_prefix}"
 
 if [[ "\$URI" == *"?backend="* ]]; then
     # Extract the value of the 'backend' query parameter
@@ -111,8 +130,8 @@ if [ -z "\$backendServer" ]; then
 fi
 
 zenity --info --text="Starting LearnSpace3D with Backend: \${backendServer}." --title="LearnSpace3D"
-# The 'Path' in the .desktop file sets the working directory; learnspace3d.exe should be there.
-\${prime_prefix_placeholder}wine learnspace3d.exe -backend "\$backendServer"
+# Execute: [MANGOHUD_CONFIG=... mangohud] [prime-run] wine learnspace3d.exe -backend "\$backendServer"
+\${CMD_PREFIX}wine learnspace3d.exe -backend "\$backendServer"
 EOF
 chmod +x "$LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
 echo "Launch script created at $LS3D_LAUNCH_SCRIPT_DIR_LINUX/launch-ls3d.sh"
