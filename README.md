@@ -5,11 +5,11 @@ WBS LearnSpace 3D provides official installers for Windows and macOS, but does n
 
 ## Installation
 
-To install _WBS LearnSpace 3D_ on Linux, give execution permission to the `installScript.sh` and run it:
+To install _WBS LearnSpace 3D_ on Linux, give execution permission to the `install.sh` and run it:
 
 ```bash
-chmod +x installScript.sh
-./installScript.sh
+chmod +x install.sh
+./install.sh
 ```
 
 The script will:
@@ -26,6 +26,8 @@ To uninstall the software, run:
 chmod +x uninstall.sh
 ./uninstall.sh
 ```
+
+The installer and uninstaller will automatically detect your distribution and run the matching script from `Fedora/`, `Debian/`, or `Arch/`.
 
 ## Notes
 
