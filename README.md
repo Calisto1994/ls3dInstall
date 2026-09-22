@@ -1,6 +1,14 @@
 # WBS LearnSpace 3D Installation (for Linux)
 [![AUR Version](https://img.shields.io/aur/version/ls3d-installer-git?label=AUR)](https://aur.archlinux.org/packages/ls3d-installer-git) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+----
+
+## ⚠️ IMPORTANT: The current AUR build is outdated and currently NOT usable!
+
+The `ls3d-installer-git` package on the AUR still points to the old repository structure (`installScript.sh`) and therefore fails to build. Please use the install scripts from this repository directly until the AUR package is updated.
+
+----
+
 WBS LearnSpace 3D provides official installers for Windows and macOS, but does not offer a native installer for Linux. This repository provides scripts that make it possible to install and run the Windows version of WBS LearnSpace 3D on Linux using [Wine](https://www.winehq.org/). It also provides a script to remove the application if no longer needed.
 
 ## Installation
