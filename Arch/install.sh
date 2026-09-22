@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 echo "WBS LearnSpace 3D - Universal Arch Installer"
 echo "---------------------------------------------"
@@ -8,9 +9,14 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# 0. WINEPREFIX Setup (dedicated prefix so existing prefixes stay untouched)
+export WINEPREFIX="${WINEPREFIX:-$HOME/.local/share/wineprefixes/ls3d}"
+mkdir -p "$WINEPREFIX"
+echo "Using Wine prefix: $WINEPREFIX"
+
 # 1. Install dependencies
 echo "Preparing system and installing packages (Wine, Zenity, Winetricks)..."
-sudo pacman -S --needed --noconfirm wget wine winetricks zenity
+sudo pacman -S --needed --noconfirm wget wine winetricks zenity xdg-utils desktop-file-utils
 
 # 2. NVIDIA Detection and Variable Setup
 # We check for nvidia-smi to see if Hardware + Drivers are present
@@ -46,22 +52,21 @@ echo "Configuring DXVK (for better 3D performance under Wine)..."
 winetricks dxvk
 
 # 5. Download & Installation
-installURL="http://itsupport.wbstraining.de/tnlogin/Business/Install_LS3D.EXE"
+installURL="https://itsupport.wbstraining.de/tnlogin/Business/Install_LS3D.EXE"
 INSTALLER="Install_LS3D.EXE"
 echo "Downloading WBS Installer..."
-wget -O "$INSTALLER" "$installURL"
-
-if [ -f "$INSTALLER" ]; then
-    echo "Starting WBS Installer..."
-    wine "./$INSTALLER"
-else
+if ! wget -O "$INSTALLER" "$installURL"; then
     echo "Error: Download failed."
     exit 1
 fi
 
+echo "Starting WBS Installer..."
+wine "./$INSTALLER"
+rm -f "$INSTALLER"
+
 # 6. Create Launch Script
 # This script will be called by the browser via the URI handler
-LAUNCH_DIR="$HOME/.wine/drive_c/users/$USER/AppData/Local/TriCAT/WBS"
+LAUNCH_DIR="$WINEPREFIX/drive_c/users/$USER/AppData/Local/TriCAT/WBS"
 mkdir -p "$LAUNCH_DIR"
 
 echo "Creating launch script..."
@@ -84,10 +89,10 @@ if [ -z "\$backendServer" ]; then
 fi
 
 # Actual program start with the selected prefixes
+export WINEPREFIX="$WINEPREFIX"
 cd "$LAUNCH_DIR"
 ${mangohud_prefix}${nvidia_prefix}wine learnspace3d.exe -backend "\$backendServer"
 EOF_SCRIPT
-
 chmod +x "$LAUNCH_DIR/launch-ls3d.sh"
 
 # 7. Desktop Integration (URI Handler)
@@ -104,8 +109,8 @@ NoDisplay=true
 Path=$LAUNCH_DIR" > "$DESKTOP_PATH"
 
 update-desktop-database "$HOME/.local/share/applications"
+gio mime set x-scheme-handler/ls3d ls3d-wbs-handler.desktop
 
 echo "------------------------------------------------"
 echo "DONE! The system is ready."
 echo "LearnSpace3D will now start via ls3d:// links."
-rm -f "$INSTALLER"

@@ -1,10 +1,12 @@
 #!/bin/bash
+set -euo pipefail
 
 echo "WBS LearnSpace 3D - Arch Uninstaller"
 echo "------------------------------------"
 
 # 1. Define Paths
-LAUNCH_DIR="$HOME/.wine/drive_c/users/$USER/AppData/Local/TriCAT/WBS"
+WINEPREFIX="${WINEPREFIX:-$HOME/.local/share/wineprefixes/ls3d}"
+LAUNCH_DIR="$WINEPREFIX/drive_c/users/$USER/AppData/Local/TriCAT/WBS"
 DESKTOP_PATH="$HOME/.local/share/applications/ls3d-wbs-handler.desktop"
 
 # 2. Remove Desktop Integration
@@ -29,11 +31,34 @@ else
     echo "Application data directory not found. Skipping."
 fi
 
-# 4. Optional: Remove Pacman Packages
+# 3b. Optionally remove the whole Wine prefix (incl. DXVK)
+if [ -d "$WINEPREFIX" ]; then
+    read -r -p "Do you want to delete the dedicated Wine prefix ($WINEPREFIX)? [y/N] " delete_prefix
+    if [[ "$delete_prefix" =~ ^[JjYy]$ ]]; then
+        echo "Deleting $WINEPREFIX..."
+        rm -rf "$WINEPREFIX"
+    else
+        echo "Keeping Wine prefix."
+    fi
+else
+    echo "Wine prefix not found. Skipping."
+fi
+
+# 4. Optional: Remove Pacman Packages (only the ones actually installed)
 read -r -p "Do you want to uninstall the dependencies (wine, winetricks, zenity, mangohud)? [y/N] " remove_pkgs
 if [[ "$remove_pkgs" =~ ^[JjYy]$ ]]; then
-    echo "Removing packages..."
-    sudo pacman -Rns wine winetricks zenity mangohud
+    installed_pkgs=""
+    for pkg in wine winetricks zenity mangohud; do
+        if pacman -Qq "$pkg" >/dev/null 2>&1; then
+            installed_pkgs="$installed_pkgs $pkg"
+        fi
+    done
+    if [ -n "${installed_pkgs// /}" ]; then
+        echo "Removing packages:$installed_pkgs"
+        sudo pacman -Rns --noconfirm $installed_pkgs
+    else
+        echo "No matching packages installed. Skipping."
+    fi
 else
     echo "Keeping installed packages."
 fi
